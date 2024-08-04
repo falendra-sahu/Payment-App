@@ -18,10 +18,12 @@
         }
         .sidebar {
             width: 250px;
-            background-color: #343a40;
+            background-color: #000;
             padding: 20px;
             color: #ffffff;
-            display: block;
+        }
+        .sidebar h2 {
+            margin-bottom: 20px;
         }
         .sidebar-item {
             display: flex;
@@ -34,6 +36,9 @@
         }
         .sidebar-item:hover {
             background-color: #495057;
+        }
+        .sidebar-item i {
+            margin-right: 10px;
         }
         .content {
             flex: 1;
@@ -56,18 +61,19 @@
         }
         .search-container input {
             flex: 1;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #ced4da;
             border-radius: 5px;
             margin-right: 10px;
         }
         .import-button, .delete-button, .transfer-button, .clear-search-button {
-            padding: 10px 15px;
+            padding: 8px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             transition: background-color 0.3s;
+            margin-left: 5px;
         }
         .import-button {
             background-color: #28a745;
@@ -126,10 +132,10 @@
             cursor: pointer;
             color: #dc3545;
             font-size: 18px;
-            display: none; /* Initially hidden */
+            display: none;
         }
         .card.paid .remove-icon {
-            display: block; /* Show only for paid cards */
+            display: block;
         }
         .card p {
             margin: 5px 0;
@@ -144,28 +150,59 @@
             width: 100%;
             padding: 10px 0;
             text-align: center;
-            display: none; 
+            display: flex;
+            justify-content: center;
         }
         .nav-icon {
             margin: 0 20px;
             font-size: 24px;
             cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .nav-icon:hover {
+            transform: scale(1.2);
+        }
+        .tooltip {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: none;
+            white-space: nowrap;
         }
         @media (max-width: 768px) {
             .sidebar {
-                display: none; 
-            }
-            .bottom-nav {
-                display: flex; 
+                display: none;
             }
             .card {
-                flex: 1 1 100%; 
+                flex: 1 1 100%;
             }
         }
         @media (min-width: 769px) {
             .bottom-nav {
-                display: none; 
+                display: none;
             }
+        }
+        .confirmation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+        }
+        .confirmation button {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -203,15 +240,15 @@
                 <h1>Master List</h1>
                 <div class="import-container">
                     <input type="file" id="fileInput" accept=".xlsx, .xls" style="display:none;" onchange="importData();">
-                    <button class="import-button" onclick="document.getElementById('fileInput').click();">Import Data</button>
-                    <button class="delete-button" onclick="deleteData()">Delete Data</button>
+                    <button class="import-button" onclick="document.getElementById('fileInput').click();"><i class="fas fa-file-import"></i></button>
+                    <button class="delete-button" onclick="confirmDelete('master')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
 
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
-                <button class="clear-search-button" onclick="clearSearch('searchInput')">Clear Search</button>
-                <button class="transfer-button" onclick="transferToPaidAC()">Transfer to Paid AC</button>
+                <button class="clear-search-button" onclick="clearSearch('searchInput')"><i class="fa-sharp-duotone fa-solid fa-eraser"></i></button>
+                <button class="transfer-button" onclick="transferToPaidAC()"><i class="fa-sharp-duotone fa-solid fa-copy"></i></button>
             </div>
 
             <div class="card-container hidden" id="masterCardContainer"></div>
@@ -221,13 +258,13 @@
             <div class="header">
                 <h1>Paid AC</h1>
                 <div class="import-container">
-                    <button class="delete-button" onclick="clearPaidAC()">Delete Data</button>
+                    <button class="delete-button" onclick="confirmDelete('paid', true)"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
 
             <div class="search-container">
                 <input type="text" id="paidACSearchInput" placeholder="Search..." oninput="searchPaidAC()">
-                <button class="clear-search-button" onclick="clearSearch('paidACSearchInput')">Clear Search</button>
+                <button class="clear-search-button" onclick="clearSearch('paidACSearchInput')"><i class="fa-sharp-duotone fa-solid fa-eraser"></i></button>
             </div>
 
             <div class="card-container hidden" id="paidACCardContainer"></div>
@@ -237,25 +274,32 @@
             <div class="header">
                 <h1>Cash</h1>
                 <div class="import-container">
-                    <button class="delete-button" onclick="clearCash()">Delete Data</button>
+                    <button class="delete-button" onclick="confirmDelete('cash')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
 
             <div class="search-container">
                 <input type="text" id="cashSearchInput" placeholder="Search..." oninput="searchCash()">
-                <button class="clear-search-button" onclick="clearSearch('cashSearchInput')">Clear Search</button>
+                <button class="clear-search-button" onclick="clearSearch('cashSearchInput')"><i class="fa-sharp-duotone fa-solid fa-eraser"></i></button>
             </div>
 
             <div class="card-container hidden" id="cashCardContainer"></div>
+        </div>
+
+        <div id="confirmationDialog" class="confirmation">
+            <p id="confirmationMessage"></p>
+            <button class="delete-button" id="confirmDelete">Confirm</button>
+            <button class="clear-search-button" id="cancelDelete">Cancel</button>
         </div>
     </div>
 </div>
 
 <div class="bottom-nav">
-    <i class="fas fa-home nav-icon" title="Overview"></i>
-    <i class="fas fa-list nav-icon" title="Master List" onclick="showSection('masterList')"></i>
-    <i class="fas fa-check-circle nav-icon" title="Paid AC" onclick="showSection('paidAC')"></i>
-    <i class="fas fa-money-bill-wave nav-icon" title="Cash" onclick="showSection('cash')"></i>
+    <div id="tooltip" class="tooltip"></div>
+    <i class="fas fa-home nav-icon" onclick="showSectionWithTooltip('dashboard', 'Overview')"></i>
+    <i class="fas fa-list nav-icon" onclick="showSectionWithTooltip('masterList', 'Master List')"></i>
+    <i class="fas fa-check-circle nav-icon" onclick="showSectionWithTooltip('paidAC', 'Paid AC')"></i>
+    <i class="fas fa-money-bill-wave nav-icon" onclick="showSectionWithTooltip('cash', 'Cash')"></i>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
@@ -263,10 +307,27 @@
     let globalData = [];
     let paidACData = [];
     let cashData = [];
+    let sectionToDelete = '';
+    let isPaidACDelete = false;
 
     function showSection(section) {
         document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
         document.getElementById(section).classList.remove('hidden');
+    }
+
+    function showSectionWithTooltip(section, tooltipText) {
+        showSection(section);
+        const tooltip = document.getElementById('tooltip');
+        tooltip.textContent = tooltipText;
+        tooltip.style.display = 'block';
+        const icon = event.currentTarget;
+        const rect = icon.getBoundingClientRect();
+        tooltip.style.left = `${rect.left + rect.width / 2}px`;
+        tooltip.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+        
+        setTimeout(() => {
+            tooltip.style.display = 'none';
+        }, 2000);
     }
 
     function importData() {
@@ -309,7 +370,7 @@
             const card = document.createElement('div');
             card.className = `card${type === 'paid' ? ' paid' : ''}`;
             card.innerHTML = `
-                ${type === 'paid' ? `<i class="fa-sharp-duotone fa-solid fa-trash remove-icon" onclick="removeCard(${index})"></i>` : ''}
+                ${type === 'paid' ? `<i class="fa-sharp-duotone fa-solid fa-trash remove-icon" onclick="confirmRemove(${index})"></i>` : ''}
                 <h4>
                     Customer ${index + 1}
                     ${type === 'master' ? `<input type="checkbox" class="card-checkbox" data-index="${index}">` : ''}
@@ -317,10 +378,10 @@
                 <p><strong>Account Name:</strong> ${row['ACCOUNT NAME'] || 'N/A'}</p>
                 <p><strong>Account No:</strong> ${row['ACCOUNT NO'] || 'N/A'}</p>
                 <p><strong>Denomination:</strong> ${row['DENOMINATION'] || 'N/A'}</p>
-                <p><strong>Paid Up To:</strong> ${row['PAID UPTO'] || 'N/A'}</p>
-                <p><strong>Due Date:</strong> ${row['DUE DATE'] || 'N/A'}</p>
-                <p><strong>Opened On:</strong> ${row['OPENED ON'] || 'N/A'}</p>
-                <p><strong>Maturity Date:</strong> ${row['MATURITY DATE'] || 'N/A'}</p>
+                <p><strong>Paid Up To:</strong> ${formatDate(row['PAID UPTO']) || 'N/A'}</p>
+                <p><strong>Due Date:</strong> ${formatDate(row['DUE DATE']) || 'N/A'}</p>
+                <p><strong>Opened On:</strong> ${formatDate(row['OPENED ON']) || 'N/A'}</p>
+                <p><strong>Maturity Date:</strong> ${formatDate(row['MATURITY DATE']) || 'N/A'}</p>
                 <p><strong>Total:</strong> ${row['TOTAL'] || 'N/A'}</p>
                 <p><strong>Guardian:</strong> ${row['GUARDIAN'] || 'N/A'}</p>
                 <p><strong>Address:</strong> ${row['ADDRESS'] || 'N/A'}</p>
@@ -332,9 +393,50 @@
         cardContainer.classList.remove('hidden');
     }
 
+    function formatDate(excelDate) {
+        if (!excelDate) return '';
+        const date = new Date((excelDate - 25569) * 86400 * 1000);
+        return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    }
+
+    function confirmDelete(section) {
+        sectionToDelete = section;
+        const message = section === 'master' ? 'Are you sure you want to delete all data from Master List?' :
+                        section === 'paid' ? 'Are you sure you want to delete all Paid AC data?' :
+                        'Are you sure you want to delete all Cash data?';
+        document.getElementById('confirmationMessage').textContent = message;
+        document.getElementById('confirmationDialog').style.display = 'block';
+    }
+
+    function confirmRemove(index) {
+        isPaidACDelete = true;
+        document.getElementById('confirmationMessage').textContent = 'Are you sure you want to delete this Paid AC entry?';
+        document.getElementById('confirmationDialog').style.display = 'block';
+        document.getElementById('confirmDelete').onclick = () => removeCard(index);
+    }
+
+    document.getElementById('confirmDelete').onclick = function () {
+        if (sectionToDelete === 'master') {
+            deleteData();
+        } else if (sectionToDelete === 'paid') {
+            clearPaidAC();
+        } else if (sectionToDelete === 'cash') {
+            clearCash();
+        }
+        closeConfirmation();
+    };
+
+    document.getElementById('cancelDelete').onclick = closeConfirmation;
+
+    function closeConfirmation() {
+        document.getElementById('confirmationDialog').style.display = 'none';
+    }
+
     function removeCard(index) {
         paidACData.splice(index, 1);
         displayData(paidACData, 'paid');
+        closeConfirmation();
+        isPaidACDelete = false;
     }
 
     function transferToPaidAC() {
@@ -408,6 +510,20 @@
         }
     }
 
+    // Function to automatically delete Paid AC data on the 1st of every month
+    function automaticDeletePaidAC() {
+        const now = new Date();
+        if (now.getDate() === 1) {
+            clearPaidAC();
+            alert("Paid AC data has been cleared for the new month.");
+        }
+    }
+
+    // Set an interval to check for the date every day
+    setInterval(automaticDeletePaidAC, 24 * 60 * 60 * 1000); // Check daily
+
+    // Initial check on page load
+    automaticDeletePaidAC();
 </script>
 
 </body>
