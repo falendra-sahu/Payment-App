@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master List with Data Import</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            padding: 20px;
+            color: #ffffff;
+            display: block;
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .sidebar-item:hover {
+            background-color: #495057;
+        }
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+        }
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .search-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .import-button, .delete-button, .transfer-button, .clear-search-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .import-button {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .import-button:hover {
+            background-color: #218838;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .transfer-button {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .transfer-button:hover {
+            background-color: #0069d9;
+        }
+        .clear-search-button {
+            background-color: #ffc107;
+            color: #fff;
+        }
+        .clear-search-button:hover {
+            background-color: #e0a800;
+        }
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex: 1 1 calc(33.333% - 20px);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .card h4 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 18px;
+            display: none; /* Initially hidden */
+        }
+        .card.paid .remove-icon {
+            display: block; /* Show only for paid cards */
+        }
+        .card p {
+            margin: 5px 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .bottom-nav {
+            background-color: #f8f9fa;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 10px 0;
+            text-align: center;
+            display: none; 
+        }
+        .nav-icon {
+            margin: 0 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none; 
+            }
+            .bottom-nav {
+                display: flex; 
+            }
+            .card {
+                flex: 1 1 100%; 
+            }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav {
+                display: none; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <div class="sidebar-item" onclick="showSection('dashboard')">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </div>
+        <div class="sidebar-item" onclick="showSection('masterList')">
+            <i class="fas fa-list"></i>
+            <span>Master List</span>
+        </div>
+        <div class="sidebar-item" onclick="showSection('paidAC')">
+            <i class="fas fa-check-circle"></i>
+            <span>Paid AC</span>
+        </div>
+        <div class="sidebar-item" onclick="showSection('cash')">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Cash</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="dashboard" class="section">
+            <h1>Dashboard</h1>
+            <p>Welcome to the Dashboard! Here you can get an overview of your data.</p>
+        </div>
+
+        <div id="masterList" class="section hidden">
+            <div class="header">
+                <h1>Master List</h1>
+                <div class="import-container">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display:none;" onchange="importData();">
+                    <button class="import-button" onclick="document.getElementById('fileInput').click();">Import Data</button>
+                    <button class="delete-button" onclick="deleteData()">Delete Data</button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search..." oninput="searchData()">
+                <button class="clear-search-button" onclick="clearSearch('searchInput')">Clear Search</button>
+                <button class="transfer-button" onclick="transferToPaidAC()">Transfer to Paid AC</button>
+            </div>
+
+            <div class="card-container hidden" id="masterCardContainer"></div>
+        </div>
+
+        <div id="paidAC" class="section hidden">
+            <div class="header">
+                <h1>Paid AC</h1>
+                <div class="import-container">
+                    <button class="delete-button" onclick="clearPaidAC()">Delete Data</button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="paidACSearchInput" placeholder="Search..." oninput="searchPaidAC()">
+                <button class="clear-search-button" onclick="clearSearch('paidACSearchInput')">Clear Search</button>
+            </div>
+
+            <div class="card-container hidden" id="paidACCardContainer"></div>
+        </div>
+
+        <div id="cash" class="section hidden">
+            <div class="header">
+                <h1>Cash</h1>
+                <div class="import-container">
+                    <button class="delete-button" onclick="clearCash()">Delete Data</button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="cashSearchInput" placeholder="Search..." oninput="searchCash()">
+                <button class="clear-search-button" onclick="clearSearch('cashSearchInput')">Clear Search</button>
+            </div>
+
+            <div class="card-container hidden" id="cashCardContainer"></div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <i class="fas fa-home nav-icon" title="Overview"></i>
+    <i class="fas fa-list nav-icon" title="Master List" onclick="showSection('masterList')"></i>
+    <i class="fas fa-check-circle nav-icon" title="Paid AC" onclick="showSection('paidAC')"></i>
+    <i class="fas fa-money-bill-wave nav-icon" title="Cash" onclick="showSection('cash')"></i>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script>
+    let globalData = [];
+    let paidACData = [];
+    let cashData = [];
+
+    function showSection(section) {
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(section).classList.remove('hidden');
+    }
+
+    function importData() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please select a file.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            globalData = XLSX.utils.sheet_to_json(firstSheet);
+            displayData(globalData, 'master');
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function displayData(data, type) {
+        let cardContainer;
+
+        if (type === 'master') {
+            cardContainer = document.getElementById('masterCardContainer');
+        } else if (type === 'paid') {
+            cardContainer = document.getElementById('paidACCardContainer');
+        } else if (type === 'cash') {
+            cardContainer = document.getElementById('cashCardContainer');
+        }
+
+        cardContainer.innerHTML = '';
+        if (data.length === 0) {
+            cardContainer.classList.add('hidden');
+            return;
+        }
+
+        data.forEach((row, index) => {
+            const card = document.createElement('div');
+            card.className = `card${type === 'paid' ? ' paid' : ''}`;
+            card.innerHTML = `
+                ${type === 'paid' ? `<i class="fa-sharp-duotone fa-solid fa-trash remove-icon" onclick="removeCard(${index})"></i>` : ''}
+                <h4>
+                    Customer ${index + 1}
+                    ${type === 'master' ? `<input type="checkbox" class="card-checkbox" data-index="${index}">` : ''}
+                </h4>
+                <p><strong>Account Name:</strong> ${row['ACCOUNT NAME'] || 'N/A'}</p>
+                <p><strong>Account No:</strong> ${row['ACCOUNT NO'] || 'N/A'}</p>
+                <p><strong>Denomination:</strong> ${row['DENOMINATION'] || 'N/A'}</p>
+                <p><strong>Paid Up To:</strong> ${row['PAID UPTO'] || 'N/A'}</p>
+                <p><strong>Due Date:</strong> ${row['DUE DATE'] || 'N/A'}</p>
+                <p><strong>Opened On:</strong> ${row['OPENED ON'] || 'N/A'}</p>
+                <p><strong>Maturity Date:</strong> ${row['MATURITY DATE'] || 'N/A'}</p>
+                <p><strong>Total:</strong> ${row['TOTAL'] || 'N/A'}</p>
+                <p><strong>Guardian:</strong> ${row['GUARDIAN'] || 'N/A'}</p>
+                <p><strong>Address:</strong> ${row['ADDRESS'] || 'N/A'}</p>
+                <p><strong>CIF No:</strong> ${row['CIF N'] || 'N/A'}</p>
+            `;
+            cardContainer.appendChild(card);
+        });
+
+        cardContainer.classList.remove('hidden');
+    }
+
+    function removeCard(index) {
+        paidACData.splice(index, 1);
+        displayData(paidACData, 'paid');
+    }
+
+    function transferToPaidAC() {
+        const checkboxes = document.querySelectorAll('#masterCardContainer .card-checkbox:checked');
+        const selectedData = Array.from(checkboxes).map(cb => {
+            const index = cb.getAttribute('data-index');
+            return globalData[index];
+        });
+
+        paidACData = [...paidACData, ...selectedData];
+        displayData(paidACData, 'paid');
+
+        checkboxes.forEach(cb => cb.checked = false);
+        displayData(globalData, 'master');
+    }
+
+    function clearPaidAC() {
+        paidACData = [];
+        document.getElementById('paidACCardContainer').innerHTML = '';
+        document.getElementById('paidACCardContainer').classList.add('hidden');
+    }
+
+    function clearCash() {
+        cashData = [];
+        document.getElementById('cashCardContainer').innerHTML = '';
+        document.getElementById('cashCardContainer').classList.add('hidden');
+    }
+
+    function deleteData() {
+        globalData = [];
+        document.getElementById('masterCardContainer').innerHTML = '';
+        document.getElementById('masterCardContainer').classList.add('hidden');
+        document.getElementById('fileInput').value = '';
+    }
+
+    function searchData() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        const filteredData = globalData.filter(row => {
+            return (row['ACCOUNT NAME'] && row['ACCOUNT NAME'].toLowerCase().includes(searchValue)) ||
+                   (row['GUARDIAN'] && row['GUARDIAN'].toLowerCase().includes(searchValue));
+        });
+        displayData(filteredData, 'master');
+    }
+
+    function searchPaidAC() {
+        const searchValue = document.getElementById('paidACSearchInput').value.toLowerCase();
+        const filteredData = paidACData.filter(row => {
+            return (row['ACCOUNT NAME'] && row['ACCOUNT NAME'].toLowerCase().includes(searchValue)) ||
+                   (row['GUARDIAN'] && row['GUARDIAN'].toLowerCase().includes(searchValue));
+        });
+        displayData(filteredData, 'paid');
+    }
+
+    function searchCash() {
+        const searchValue = document.getElementById('cashSearchInput').value.toLowerCase();
+        const filteredData = cashData.filter(row => {
+            return (row['ACCOUNT NAME'] && row['ACCOUNT NAME'].toLowerCase().includes(searchValue)) ||
+                   (row['GUARDIAN'] && row['GUARDIAN'].toLowerCase().includes(searchValue));
+        });
+        displayData(filteredData, 'cash');
+    }
+
+    function clearSearch(inputId) {
+        document.getElementById(inputId).value = '';
+        if (inputId === 'searchInput') {
+            displayData(globalData, 'master');
+        } else if (inputId === 'paidACSearchInput') {
+            displayData(paidACData, 'paid');
+        } else if (inputId === 'cashSearchInput') {
+            displayData(cashData, 'cash');
+        }
+    }
+
+</script>
+
+</body>
+</html>
